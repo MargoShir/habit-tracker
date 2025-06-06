@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ежедневный Трекер Привычек</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Секция сегодня */
+        .today-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .today-date {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .today-progress {
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .daily-progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .daily-progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+            border-radius: 6px;
+        }
+
+        .habits-today {
+            display: grid;
+            gap: 15px;
+        }
+
+        .habit-today-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .habit-today-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .habit-today-item.completed {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .habit-checkbox {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            margin-right: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .habit-checkbox.checked {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .habit-checkbox:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+
+        .habit-today-name {
+            flex: 1;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .habit-streak {
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Форма добавления привычки */
+        .habit-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .habit-form input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .habit-form input:focus {
+            outline: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .habit-form button {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .habit-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Еженедельный обзор */
+        .week-overview {
+            display: grid;
+            gap: 20px;
+        }
+
+        .habit-week-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .habit-week-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .habit-week-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .habit-week-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #ff3838;
+            transform: scale(1.1);
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .week-day {
+            text-align: center;
+            padding: 8px 4px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #666;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .week-cell {
+            aspect-ratio: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+
+        .week-cell:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .week-cell.completed {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .week-cell.today {
+            border-color: #ff4757;
+            border-width: 3px;
+        }
+
+        .week-stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 10px;
+        }
+
+        .week-stat {
+            text-align: center;
+        }
+
+        .week-stat-number {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .week-stat-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .habit-form {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .today-date {
+                font-size: 1.4em;
+            }
+            
+            .habit-today-item {
+                padding: 15px;
+            }
+            
+            .habit-today-name {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Ежедневный Трекер Привычек</h1>
+        
+        <div class="navigation">
+            <button class="nav-btn active" onclick="showSection('today')">Сегодня</button>
+            <button class="nav-btn" onclick="showSection('manage')">Управление</button>
+            <button class="nav-btn" onclick="showSection('weekly')">Недельный обзор</button>
+        </div>
+
+        <!-- Секция "Сегодня" -->
+        <div id="todaySection" class="section active">
+            <div class="today-header">
+                <div class="today-date" id="todayDate"></div>
+                <div class="today-progress" id="todayProgress">0 из 0 привычек выполнено</div>
+                <div class="daily-progress-bar">
+                    <div class="daily-progress-fill" id="dailyProgressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div id="habitsToday" class="habits-today"></div>
+            
+            <div id="emptyTodayState" class="empty-state">
+                <h3>🎯 Добавьте привычки для отслеживания</h3>
+                <p>Перейдите в раздел "Управление" чтобы добавить новые привычки</p>
+            </div>
+        </div>
+
+        <!-- Секция "Управление" -->
+        <div id="manageSection" class="section">
+            <div class="habit-form">
+                <input type="text" id="habitInput" placeholder="Введите новую привычку..." maxlength="50">
+                <button onclick="addHabit()">➕ Добавить</button>
+            </div>
+            
+            <div id="manageList" class="week-overview"></div>
+            
+            <div id="emptyManageState" class="empty-state">
+                <h3>📝 Создайте свои первые привычки</h3>
+                <p>Добавьте привычки, которые хотите отслеживать каждый день</p>
+            </div>
+        </div>
+
+        <!-- Секция "Недельный обзор" -->
+        <div id="weeklySection" class="section">
+            <div id="weeklyOverview" class="week-overview"></div>
+            
+            <div id="emptyWeeklyState" class="empty-state">
+                <h3>📊 Недельная статистика появится здесь</h3>
+                <p>Добавьте привычки и начните их отслеживать</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Данные приложения
+        let habits = [];
+        let habitIdCounter = 1;
+        let currentSection = 'today';
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSampleData();
+            updateTodayDate();
+            renderAll();
+            
+            document.getElementById('habitInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addHabit();
+                }
+            });
+        });
+
+        // Загрузка примерных данных
+        function loadSampleData() {
+            const sampleHabits = [
+                { id: 1, name: 'Утренняя зарядка', completedDates: [] },
+                { id: 2, name: 'Выпить 2 литра воды', completedDates: [] },
+                { id: 3, name: 'Прочитать 20 страниц', completedDates: [] }
+            ];
+            habits = sampleHabits;
+            habitIdCounter = 4;
+        }
+
+        // Переключение секций
+        function showSection(section) {
+            // Скрыть все секции
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            // Показать выбранную секцию
+            document.getElementById(section + 'Section').classList.add('active');
+            event.target.classList.add('active');
+            
+            currentSection = section;
+            renderAll();
+        }
+
+        // Обновление даты сегодня
+        function updateTodayDate() {
+            const today = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('todayDate').textContent = today.toLocaleDateString('ru-RU', options);
+        }
+
+        // Добавление привычки
+        function addHabit() {
+            const input = document.getElementById('habitInput');
+            const habitName = input.value.trim();
+            
+            if (habitName === '') {
+                alert('Пожалуйста, введите название привычки');
+                return;
+            }
+
+            const newHabit = {
+                id: habitIdCounter++,
+                name: habitName,
+                completedDates: []
+            };
+
+            habits.push(newHabit);
+            input.value = '';
+            renderAll();
+        }
+
+        // Удаление привычки
+        function deleteHabit(habitId) {
+            if (confirm('Вы уверены, что хотите удалить эту привычку?')) {
+                habits = habits.filter(habit => habit.id !== habitId);
+                renderAll();
+            }
+        }
+
+        // Переключение выполнения привычки на сегодня
+        function toggleHabitToday(habitId) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            const dateIndex = habit.completedDates.indexOf(today);
+            
+            if (dateIndex > -1) {
+                habit.completedDates.splice(dateIndex, 1);
+            } else {
+                habit.completedDates.push(today);
+            }
+
+            renderAll();
+        }
+
+        // Переключение дня в недельном обзоре
+        function toggleDayInWeek(habitId, date) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return;
+
+            const dateIndex = habit.completedDates.indexOf(date);
+            if (dateIndex > -1) {
+                habit.completedDates.splice(dateIndex, 1);
+            } else {
+                habit.completedDates.push(date);
+            }
+
+            renderAll();
+        }
+
+        // Получение последних 7 дней
+        function getLastWeek() {
+            const days = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                days.push(date.toISOString().split('T')[0]);
+            }
+            
+            return days;
+        }
+
+        // Вычисление серии
+        function calculateStreak(habit) {
+            let streak = 0;
+            const today = new Date();
+            
+            for (let i = 0; i < 30; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() - i);
+                const dateStr = checkDate.toISOString().split('T')[0];
+                
+                if (habit.completedDates.includes(dateStr)) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        // Рендеринг секции "Сегодня"
+        function renderTodaySection() {
+            const container = document.getElementById('habitsToday');
+            const emptyState = document.getElementById('emptyTodayState');
+            const progressElement = document.getElementById('todayProgress');
+            const progressFill = document.getElementById('dailyProgressFill');
+            
+            if (habits.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                progressElement.textContent = '0 из 0 привычек выполнено';
+                progressFill.style.width = '0%';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            const today = new Date().toISOString().split('T')[0];
+            const completedToday = habits.filter(habit => habit.completedDates.includes(today)).length;
+            const totalHabits = habits.length;
+            const progressPercent = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+            
+            progressElement.textContent = `${completedToday} из ${totalHabits} привычек выполнено`;
+            progressFill.style.width = progressPercent + '%';
+            
+            container.innerHTML = habits.map(habit => {
+                const isCompleted = habit.completedDates.includes(today);
+                const streak = calculateStreak(habit);
+                
+                return `
+                    <div class="habit-today-item ${isCompleted ? 'completed' : ''}">
+                        <div class="habit-checkbox ${isCompleted ? 'checked' : ''}" onclick="toggleHabitToday(${habit.id})">
+                            ${isCompleted ? '✓' : ''}
+                        </div>
+                        <div class="habit-today-name">${habit.name}</div>
+                        <div class="habit-streak">
+                            🔥 ${streak} ${getDayWord(streak)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Рендеринг секции "Управление"
+        function renderManageSection() {
+            const container = document.getElementById('manageList');
+            const emptyState = document.getElementById('emptyManageState');
+            
+            if (habits.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = habits.map(habit => {
+                const streak = calculateStreak(habit);
+                const totalCompleted = habit.completedDates.length;
+                const completionRate = Math.round((totalCompleted / 30) * 100);
+                
+                return `
+                    <div class="habit-week-card">
+                        <div class="habit-week-header">
+                            <div class="habit-week-name">${habit.name}</div>
+                            <button class="delete-btn" onclick="deleteHabit(${habit.id})">×</button>
+                        </div>
+                        <div class="week-stats">
+                            <div class="week-stat">
+                                <div class="week-stat-number">${streak}</div>
+                                <div class="week-stat-label">Текущая серия</div>
+                            </div>
+                            <div class="week-stat">
+                                <div class="week-stat-number">${totalCompleted}</div>
+                                <div class="week-stat-label">Всего выполнено</div>
+                            </div>
+                            <div class="week-stat">
+                                <div class="week-stat-number">${completionRate}%</div>
+                                <div class="week-stat-label">Успешность</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Рендеринг недельного обзора
+        function renderWeeklySection() {
+            const container = document.getElementById('weeklyOverview');
+            const emptyState = document.getElementById('emptyWeeklyState');
+            
+            if (habits.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            const lastWeek = getLastWeek();
+            const today = new Date().toISOString().split('T')[0];
+            const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+            
+            container.innerHTML = habits.map(habit => {
+                const weekCompleted = lastWeek.filter(date => habit.completedDates.includes(date)).length;
+                const weekRate = Math.round((weekCompleted / 7) * 100);
+                const streak = calculateStreak(habit);
+                
+                return `
+                    <div class="habit-week-card">
+                        <div class="habit-week-header">
+                            <div class="habit-week-name">${habit.name}</div>
+                            <div class="habit-streak">🔥 ${streak} ${getDayWord(streak)}</div>
+                        </div>
+                        
+                        <div class="week-grid">
+                            ${dayNames.map(day => `<div class="week-day">${day}</div>`).join('')}
+                            ${lastWeek.map(date => {
+                                const isCompleted = habit.completedDates.includes(date);
+                                const isToday = date === today;
+                                const day = new Date(date).getDate();
+                                
+                                let classes = 'week-cell';
+                                if (isCompleted) classes += ' completed';
+                                if (isToday) classes += ' today';
+                                
+                                return `
+                                    <div class="${classes}" onclick="toggleDayInWeek(${habit.id}, '${date}')">
+                                        ${day}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <div class="week-stats">
+                            <div class="week-stat">
+                                <div class="week-stat-number">${weekCompleted}/7</div>
+                                <div class="week-stat-label">Дней на неделе</div>
+                            </div>
+                            <div class="week-stat">
+                                <div class="week-stat-number">${weekRate}%</div>
+                                <div class="week-stat-label">Успешность недели</div>
+                            </div>
+                            <div class="week-stat">
+                                <div class="week-stat-number">${streak}</div>
+                                <div class="week-stat-label">Серия дней</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Склонение слова "день"
+        function getDayWord(number) {
+            if (number % 10 === 1 && number % 100 !== 11) {
+                return 'день';
+            } else if (number % 10 >= 2 && number % 10 <= 4 && (number % 100 < 10 || number % 100 >= 20)) {
+                return 'дня';
+            } else {
+                return 'дней';
+            }
+        }
+
+        // Общий рендеринг
+        function renderAll() {
+            renderTodaySection();
+            renderManageSection();
+            renderWeeklySection();
+        }
+    </script>
+</body>
+</html>
