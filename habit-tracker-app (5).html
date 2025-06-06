@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер привычек</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .app-container {
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header .date {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .content {
+            padding: 20px;
+            min-height: calc(100vh - 140px);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Экран "Сегодня" */
+        .habit-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .habit-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            margin-right: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .habit-checkbox.completed {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        .habit-checkbox.completed::after {
+            content: '✓';
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .habit-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .habit-info .frequency {
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* Форма добавления привычки */
+        .add-habit-form {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Календарь */
+        .calendar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            color: #667eea;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .calendar-day.header {
+            font-weight: bold;
+            color: #666;
+            cursor: default;
+        }
+
+        .calendar-day.today {
+            background: #667eea;
+            color: white;
+        }
+
+        .calendar-day.completed {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .calendar-day.partial {
+            background: #FFC107;
+            color: white;
+        }
+
+        .calendar-day.streak {
+            position: relative;
+        }
+
+        .calendar-day.streak::after {
+            content: attr(data-streak);
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff6b6b;
+            color: white;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 8px;
+            min-width: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .habit-streak {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .streak-info {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .streak-best {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .weekly-counter {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Мои привычки</h1>
+            <div class="date" id="currentDate"></div>
+        </div>
+
+        <div class="content">
+            <!-- Экран "Сегодня" -->
+            <div class="screen active" id="todayScreen">
+                <div id="todayHabits"></div>
+                <div class="empty-state" id="emptyToday" style="display: none;">
+                    <h3>Нет привычек на сегодня</h3>
+                    <p>Добавьте новые привычки в разделе "Привычки"</p>
+                </div>
+            </div>
+
+            <!-- Экран "Мои привычки" -->
+            <div class="screen" id="habitsScreen">
+                <div class="add-habit-form">
+                    <h3 style="margin-bottom: 20px;">Добавить привычку</h3>
+                    <div class="form-group">
+                        <label for="habitName">Название привычки</label>
+                        <input type="text" id="habitName" placeholder="Например: Сделать зарядку">
+                    </div>
+                    <div class="form-group">
+                        <label for="habitFrequency">Периодичность</label>
+                        <select id="habitFrequency">
+                            <option value="daily">Ежедневно</option>
+                            <option value="weekly-2">2 раза в неделю</option>
+                            <option value="weekly-3">3 раза в неделю</option>
+                            <option value="weekly-4">4 раза в неделю</option>
+                            <option value="weekly-5">5 раз в неделю</option>
+                            <option value="weekly-6">6 раз в неделю</option>
+                            <option value="weekly">1 раз в неделю</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="addHabit()">Добавить привычку</button>
+                </div>
+
+                <div id="allHabits"></div>
+                <div class="empty-state" id="emptyHabits" style="display: none;">
+                    <h3>У вас пока нет привычек</h3>
+                    <p>Добавьте первую привычку выше</p>
+                </div>
+            </div>
+
+            <!-- Экран "Календарь" -->
+            <div class="screen" id="calendarScreen">
+                <div class="calendar">
+                    <div class="calendar-header">
+                        <button class="calendar-nav" onclick="changeMonth(-1)">←</button>
+                        <h3 id="calendarMonth"></h3>
+                        <button class="calendar-nav" onclick="changeMonth(1)">→</button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab active" onclick="switchTab('today')">
+                <div class="tab-icon">📋</div>
+                <div>Сегодня</div>
+            </button>
+            <button class="tab" onclick="switchTab('habits')">
+                <div class="tab-icon">⚙️</div>
+                <div>Привычки</div>
+            </button>
+            <button class="tab" onclick="switchTab('calendar')">
+                <div class="tab-icon">📅</div>
+                <div>Календарь</div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let habits = JSON.parse(localStorage.getItem('habits')) || [];
+        let completions = JSON.parse(localStorage.getItem('completions')) || {};
+        let currentDate = new Date();
+        let calendarDate = new Date();
+
+        // Инициализация приложения
+        function init() {
+            updateCurrentDate();
+            renderTodayHabits();
+            renderAllHabits();
+            renderCalendar();
+        }
+
+        // Обновление текущей даты
+        function updateCurrentDate() {
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = 
+                currentDate.toLocaleDateString('ru-RU', options);
+        }
+
+        // Переключение вкладок
+        function switchTab(tab) {
+            // Убираем активные классы
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            
+            // Добавляем активный класс
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById(tab + 'Screen').classList.add('active');
+            
+            // Обновляем данные при переходе
+            if (tab === 'today') renderTodayHabits();
+            if (tab === 'habits') renderAllHabits();
+            if (tab === 'calendar') renderCalendar();
+        }
+
+        // Добавление новой привычки
+        function addHabit() {
+            const name = document.getElementById('habitName').value.trim();
+            const frequency = document.getElementById('habitFrequency').value;
+            
+            if (!name) {
+                alert('Введите название привычки');
+                return;
+            }
+            
+            const habit = {
+                id: Date.now(),
+                name: name,
+                frequency: frequency,
+                created: new Date().toISOString()
+            };
+            
+            habits.push(habit);
+            localStorage.setItem('habits', JSON.stringify(habits));
+            
+            // Очищаем форму
+            document.getElementById('habitName').value = '';
+            document.getElementById('habitFrequency').value = 'daily';
+            
+            renderAllHabits();
+            renderTodayHabits();
+        }
+
+        // Проверка, нужна ли привычка сегодня
+        function isHabitDueToday(habit, date = currentDate) {
+            const today = new Date(date);
+            const dayOfWeek = today.getDay(); // 0 = воскресенье, 1 = понедельник...
+            
+            if (habit.frequency === 'daily') {
+                return true;
+            }
+            
+            if (habit.frequency === 'weekly') {
+                return dayOfWeek === 1; // Понедельник
+            }
+            
+            // Для еженедельных привычек (2-6 раз в неделю)
+            if (habit.frequency.startsWith('weekly-')) {
+                const timesPerWeek = parseInt(habit.frequency.split('-')[1]);
+                // Простая логика: выполняем в будние дни
+                return dayOfWeek >= 1 && dayOfWeek <= timesPerWeek;
+            }
+            
+            return false;
+        }
+
+        // Отрисовка привычек на сегодня
+        function renderTodayHabits() {
+            const container = document.getElementById('todayHabits');
+            const emptyState = document.getElementById('emptyToday');
+            const todayKey = currentDate.toISOString().split('T')[0];
+            
+            const todayHabits = habits.filter(habit => isHabitDueToday(habit));
+            
+            if (todayHabits.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = todayHabits.map(habit => {
+                const isCompleted = completions[todayKey] && completions[todayKey][habit.id];
+                const frequencyText = getFrequencyText(habit.frequency);
+                
+                const currentStreak = getCurrentStreak(habit.id);
+                const bestStreak = getBestStreak(habit.id);
+                
+                return `
+                    <div class="habit-item">
+                        <div class="habit-checkbox ${isCompleted ? 'completed' : ''}" 
+                             onclick="toggleHabit(${habit.id})"></div>
+                        <div class="habit-info">
+                            <h3>${habit.name}</h3>
+                            <div class="frequency">${frequencyText}</div>
+                            <div class="habit-streak">
+                                ${currentStreak > 0 ? `<div class="streak-info">🔥 ${currentStreak} ${currentStreak === 1 ? 'день' : currentStreak < 5 ? 'дня' : 'дней'} подряд</div>` : ''}
+                                ${bestStreak > 1 ? `<div class="streak-best">⭐ Рекорд: ${bestStreak} ${bestStreak < 5 ? 'дня' : 'дней'}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Отрисовка всех привычек
+        function renderAllHabits() {
+            const container = document.getElementById('allHabits');
+            const emptyState = document.getElementById('emptyHabits');
+            
+            if (habits.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = habits.map(habit => {
+                const frequencyText = getFrequencyText(habit.frequency);
+                const currentStreak = getCurrentStreak(habit.id);
+                const bestStreak = getBestStreak(habit.id);
+                
+                return `
+                    <div class="habit-item">
+                        <div class="habit-info" style="flex: 1;">
+                            <h3>${habit.name}</h3>
+                            <div class="frequency">${frequencyText}</div>
+                            <div class="habit-streak">
+                                ${currentStreak > 0 ? `<div class="streak-info">🔥 ${currentStreak} ${currentStreak === 1 ? 'день' : currentStreak < 5 ? 'дня' : 'дней'} подряд</div>` : ''}
+                                ${bestStreak > 1 ? `<div class="streak-best">⭐ Рекорд: ${bestStreak} ${bestStreak < 5 ? 'дня' : 'дней'}</div>` : ''}
+                            </div>
+                        </div>
+                        <button onclick="deleteHabit(${habit.id})" 
+                                style="background: #ff4757; color: white; border: none; 
+                                       padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+                            Удалить
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Переключение выполнения привычки
+        function toggleHabit(habitId) {
+            const todayKey = currentDate.toISOString().split('T')[0];
+            
+            if (!completions[todayKey]) {
+                completions[todayKey] = {};
+            }
+            
+            completions[todayKey][habitId] = !completions[todayKey][habitId];
+            localStorage.setItem('completions', JSON.stringify(completions));
+            
+            renderTodayHabits();
+        }
+
+        // Удаление привычки
+        function deleteHabit(habitId) {
+            if (confirm('Удалить эту привычку?')) {
+                habits = habits.filter(h => h.id !== habitId);
+                localStorage.setItem('habits', JSON.stringify(habits));
+                renderAllHabits();
+                renderTodayHabits();
+            }
+        }
+
+        // Получение текста периодичности
+        function getFrequencyText(frequency) {
+            const texts = {
+                'daily': 'Ежедневно',
+                'weekly': '1 раз в неделю',
+                'weekly-2': '2 раза в неделю',
+                'weekly-3': '3 раза в неделю',
+                'weekly-4': '4 раза в неделю',
+                'weekly-5': '5 раз в неделю',
+                'weekly-6': '6 раз в неделю'
+            };
+            return texts[frequency] || frequency;
+        }
+
+        // Отрисовка календаря
+        function renderCalendar() {
+            const monthNames = [
+                'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+            ];
+            
+            const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            
+            document.getElementById('calendarMonth').textContent = 
+                `${monthNames[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
+            
+            const firstDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
+            const lastDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            
+            // Заголовки дней недели
+            dayNames.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day header';
+                dayElement.textContent = day;
+                grid.appendChild(dayElement);
+            });
+            
+            // Дни месяца
+            const today = new Date();
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = date.getDate();
+                
+                // Проверяем, сегодня ли это
+                if (date.toDateString() === today.toDateString()) {
+                    dayElement.classList.add('today');
+                }
+                
+                // Проверяем выполнение привычек в этот день
+                const dateKey = date.toISOString().split('T')[0];
+                const dayCompletions = completions[dateKey];
+                const dayHabits = habits.filter(habit => isHabitDueToday(habit, date));
+                
+                if (dayHabits.length > 0 && dayCompletions) {
+                    const completedCount = dayHabits.filter(habit => dayCompletions[habit.id]).length;
+                    
+                    if (completedCount === dayHabits.length) {
+                        dayElement.classList.add('completed');
+                        
+                        // Показываем номер дня в серии для полностью выполненных дней
+                        const streakDay = getStreakDayNumber(date);
+                        if (streakDay > 1) {
+                            dayElement.classList.add('streak');
+                            dayElement.setAttribute('data-streak', streakDay);
+                        }
+                    } else if (completedCount > 0) {
+                        dayElement.classList.add('partial');
+                    }
+                }
+                
+                // Затемняем дни не из текущего месяца
+                if (date.getMonth() !== calendarDate.getMonth()) {
+                    dayElement.style.opacity = '0.3';
+                }
+                
+                grid.appendChild(dayElement);
+            }
+        }
+
+        // Переключение месяца в календаре
+        function changeMonth(direction) {
+            calendarDate.setMonth(calendarDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // Запуск приложения
+        init();
+
+        // Функции для подсчета серий
+        function getCurrentStreak(habitId) {
+            const today = new Date();
+            let streak = 0;
+            let currentDate = new Date(today);
+            
+            // Идем назад по дням и считаем серию
+            while (true) {
+                const dateKey = currentDate.toISOString().split('T')[0];
+                const habit = habits.find(h => h.id === habitId);
+                
+                if (!habit || !isHabitDueToday(habit, currentDate)) {
+                    currentDate.setDate(currentDate.getDate() - 1);
+                    continue;
+                }
+                
+                if (completions[dateKey] && completions[dateKey][habitId]) {
+                    streak++;
+                    currentDate.setDate(currentDate.getDate() - 1);
+                } else {
+                    break;
+                }
+                
+                // Ограничиваем поиск 365 днями
+                if (streak > 365) break;
+            }
+            
+            return streak;
+        }
+
+        function getBestStreak(habitId) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return 0;
+            
+            let bestStreak = 0;
+            let currentStreak = 0;
+            
+            // Начинаем с даты создания привычки
+            const startDate = new Date(habit.created);
+            const today = new Date();
+            
+            for (let date = new Date(startDate); date <= today; date.setDate(date.getDate() + 1)) {
+                const dateKey = date.toISOString().split('T')[0];
+                
+                if (!isHabitDueToday(habit, date)) {
+                    continue;
+                }
+                
+                if (completions[dateKey] && completions[dateKey][habitId]) {
+                    currentStreak++;
+                    bestStreak = Math.max(bestStreak, currentStreak);
+                } else {
+                    currentStreak = 0;
+                }
+            }
+            
+            return bestStreak;
+        }
+
+        function getStreakDayNumber(targetDate) {
+            // Считаем, какой это день подряд в общей серии выполнения всех привычек
+            let streakDays = 0;
+            let currentDate = new Date(targetDate);
+            
+            // Идем назад от целевой даты
+            while (true) {
+                const dateKey = currentDate.toISOString().split('T')[0];
+                const dayHabits = habits.filter(habit => isHabitDueToday(habit, currentDate));
+                
+                if (dayHabits.length === 0) {
+                    currentDate.setDate(currentDate.getDate() - 1);
+                    continue;
+                }
+                
+                const dayCompletions = completions[dateKey];
+                if (dayCompletions) {
+                    const completedCount = dayHabits.filter(habit => dayCompletions[habit.id]).length;
+                    if (completedCount === dayHabits.length) {
+                        streakDays++;
+                        currentDate.setDate(currentDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+                
+                // Ограничиваем поиск
+                if (streakDays > 100) break;
+            }
+            
+            return streakDays;
+        }
+    </script>
+</body>
+</html>
